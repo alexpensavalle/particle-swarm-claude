@@ -1,4 +1,4 @@
 ---
-title: Welcome to my blog
+title: Particle Swarm Optimization App by Claude and Palatypus
 ---
 
