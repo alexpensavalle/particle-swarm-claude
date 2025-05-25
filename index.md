@@ -2,3 +2,643 @@
 title: Particle Swarm Optimization App by Claude and Palatypus
 ---
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Particle Swarm Optimization</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+            min-width: 280px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #66d9ef;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin-bottom: 5px;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: linear-gradient(90deg, #ff6b6b, #4ecdc4);
+            outline: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+        
+        .value-display {
+            font-size: 11px;
+            color: #a8d8ea;
+            text-align: center;
+        }
+        
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #fff;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        #stats {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 200px;
+        }
+        
+        .stat-line {
+            margin: 5px 0;
+            font-size: 12px;
+        }
+        
+        .stat-value {
+            color: #4ecdc4;
+            font-weight: bold;
+        }
+        
+        .function-selector {
+            margin-bottom: 20px;
+        }
+        
+        select {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            color: white;
+            font-size: 12px;
+        }
+        
+        select option {
+            background: #1a1a2e;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <div class="title">Particle Swarm Optimizer</div>
+        
+        <div class="function-selector">
+            <label>Optimization Function</label>
+            <select id="functionSelect">
+                <option value="sphere">Sphere Function</option>
+                <option value="rastrigin">Rastrigin Function</option>
+                <option value="rosenbrock">Rosenbrock Function</option>
+                <option value="ackley">Ackley Function</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <label>Cognitive Weight (c1)</label>
+            <input type="range" id="cognitive" min="0.1" max="3" step="0.1" value="2">
+            <div class="value-display" id="cognitiveValue">2.0</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Social Weight (c2)</label>
+            <input type="range" id="social" min="0.1" max="3" step="0.1" value="2">
+            <div class="value-display" id="socialValue">2.0</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Inertia Weight (w)</label>
+            <input type="range" id="inertia" min="0.1" max="1" step="0.05" value="0.7">
+            <div class="value-display" id="inertiaValue">0.70</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Flocking Influence</label>
+            <input type="range" id="flocking" min="0" max="2" step="0.1" value="0.5">
+            <div class="value-display" id="flockingValue">0.5</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Particle Count</label>
+            <input type="range" id="particleCount" min="20" max="200" step="10" value="80">
+            <div class="value-display" id="particleCountValue">80</div>
+        </div>
+        
+        <div class="control-group">
+            <label>Search Space Size</label>
+            <input type="range" id="searchSpace" min="50" max="300" step="25" value="150">
+            <div class="value-display" id="searchSpaceValue">150</div>
+        </div>
+    </div>
+    
+    <div id="stats">
+        <div class="title" style="font-size: 14px; margin-bottom: 10px;">Statistics</div>
+        <div class="stat-line">Global Best: <span class="stat-value" id="globalBest">-</span></div>
+        <div class="stat-line">Iterations: <span class="stat-value" id="iterations">0</span></div>
+        <div class="stat-line">Convergence: <span class="stat-value" id="convergence">-</span></div>
+        <div class="stat-line">Avg Velocity: <span class="stat-value" id="avgVelocity">-</span></div>
+    </div>
+    
+    <div id="info">
+        <strong>3D Particle Swarm Optimization</strong><br>
+        Mouse: Rotate view | Scroll: Zoom<br>
+        <span style="color: #ff6b6b;">Red sphere</span>: Global best position<br>
+        Particles search for optimal solutions while flocking
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x0a0a0a);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // Camera controls
+        let mouseX = 0, mouseY = 0;
+        let targetX = 0, targetY = 0;
+        let isMouseDown = false;
+        let cameraDistance = 400;
+        
+        camera.position.set(0, 0, cameraDistance);
+        camera.lookAt(0, 0, 0);
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(200, 200, 100);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        // Add some atmospheric particles
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsVertices = [];
+        for(let i = 0; i < 1000; i++) {
+            starsVertices.push((Math.random() - 0.5) * 2000);
+            starsVertices.push((Math.random() - 0.5) * 2000);
+            starsVertices.push((Math.random() - 0.5) * 2000);
+        }
+        starsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starsVertices, 3));
+        const starsMaterial = new THREE.PointsMaterial({color: 0x888888, size: 1});
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+
+        // Optimization functions
+        const optimizationFunctions = {
+            sphere: (x, y, z) => x*x + y*y + z*z,
+            rastrigin: (x, y, z) => 30 + (x*x - 10*Math.cos(2*Math.PI*x)) + (y*y - 10*Math.cos(2*Math.PI*y)) + (z*z - 10*Math.cos(2*Math.PI*z)),
+            rosenbrock: (x, y, z) => 100*(y-x*x)*(y-x*x) + (1-x)*(1-x) + 100*(z-y*y)*(z-y*y) + (1-y)*(1-y),
+            ackley: (x, y, z) => {
+                const a = 20, b = 0.2, c = 2*Math.PI;
+                return -a * Math.exp(-b * Math.sqrt((x*x + y*y + z*z)/3)) - Math.exp((Math.cos(c*x) + Math.cos(c*y) + Math.cos(c*z))/3) + a + Math.E;
+            }
+        };
+
+        // Particle class
+        class Particle {
+            constructor(searchSpace) {
+                this.searchSpace = searchSpace;
+                
+                // PSO properties
+                this.position = new THREE.Vector3(
+                    (Math.random() - 0.5) * searchSpace,
+                    (Math.random() - 0.5) * searchSpace,
+                    (Math.random() - 0.5) * searchSpace
+                );
+                this.velocity = new THREE.Vector3(
+                    (Math.random() - 0.5) * 10,
+                    (Math.random() - 0.5) * 10,
+                    (Math.random() - 0.5) * 10
+                );
+                this.personalBest = this.position.clone();
+                this.personalBestFitness = Infinity;
+                
+                // Flocking properties
+                this.acceleration = new THREE.Vector3();
+                
+                // Visual representation
+                const geometry = new THREE.ConeGeometry(1.5, 6, 4);
+                const hue = Math.random();
+                const material = new THREE.MeshLambertMaterial({ 
+                    color: new THREE.Color().setHSL(hue, 0.8, 0.6),
+                    transparent: true,
+                    opacity: 0.9
+                });
+                this.mesh = new THREE.Mesh(geometry, material);
+                this.mesh.castShadow = true;
+                scene.add(this.mesh);
+                
+                // Trail effect
+                this.trailPoints = [];
+                this.maxTrailLength = 20;
+            }
+
+            evaluateFitness(func) {
+                const fitness = func(this.position.x / 10, this.position.y / 10, this.position.z / 10);
+                
+                if (fitness < this.personalBestFitness) {
+                    this.personalBestFitness = fitness;
+                    this.personalBest.copy(this.position);
+                }
+                
+                return fitness;
+            }
+
+            // Flocking behaviors
+            separate(particles) {
+                const desiredSeparation = 15;
+                const steer = new THREE.Vector3();
+                let count = 0;
+
+                for (let other of particles) {
+                    const d = this.position.distanceTo(other.position);
+                    if (d > 0 && d < desiredSeparation) {
+                        const diff = new THREE.Vector3().subVectors(this.position, other.position);
+                        diff.normalize();
+                        diff.divideScalar(d);
+                        steer.add(diff);
+                        count++;
+                    }
+                }
+
+                if (count > 0) {
+                    steer.divideScalar(count);
+                    steer.normalize();
+                    steer.multiplyScalar(2);
+                }
+                return steer;
+            }
+
+            align(particles) {
+                const neighborDist = 30;
+                const sum = new THREE.Vector3();
+                let count = 0;
+
+                for (let other of particles) {
+                    const d = this.position.distanceTo(other.position);
+                    if (d > 0 && d < neighborDist) {
+                        sum.add(other.velocity);
+                        count++;
+                    }
+                }
+
+                if (count > 0) {
+                    sum.divideScalar(count);
+                    sum.normalize();
+                    const steer = new THREE.Vector3().subVectors(sum, this.velocity);
+                    steer.clampLength(0, 0.5);
+                    return steer;
+                }
+                return new THREE.Vector3();
+            }
+
+            cohesion(particles) {
+                const neighborDist = 40;
+                const sum = new THREE.Vector3();
+                let count = 0;
+
+                for (let other of particles) {
+                    const d = this.position.distanceTo(other.position);
+                    if (d > 0 && d < neighborDist) {
+                        sum.add(other.position);
+                        count++;
+                    }
+                }
+
+                if (count > 0) {
+                    sum.divideScalar(count);
+                    const desired = new THREE.Vector3().subVectors(sum, this.position);
+                    desired.normalize();
+                    const steer = new THREE.Vector3().subVectors(desired, this.velocity);
+                    steer.clampLength(0, 0.3);
+                    return steer;
+                }
+                return new THREE.Vector3();
+            }
+
+            update(globalBest, particles, params) {
+                // PSO velocity update
+                const r1 = Math.random();
+                const r2 = Math.random();
+                
+                const cognitive = new THREE.Vector3().subVectors(this.personalBest, this.position).multiplyScalar(params.cognitive * r1);
+                const social = new THREE.Vector3().subVectors(globalBest, this.position).multiplyScalar(params.social * r2);
+                
+                this.velocity.multiplyScalar(params.inertia);
+                this.velocity.add(cognitive);
+                this.velocity.add(social);
+                
+                // Add flocking behavior
+                if (params.flocking > 0) {
+                    const sep = this.separate(particles);
+                    const ali = this.align(particles);
+                    const coh = this.cohesion(particles);
+                    
+                    const flockForce = new THREE.Vector3();
+                    flockForce.add(sep.multiplyScalar(1.5));
+                    flockForce.add(ali.multiplyScalar(1.0));
+                    flockForce.add(coh.multiplyScalar(1.0));
+                    
+                    this.velocity.add(flockForce.multiplyScalar(params.flocking));
+                }
+                
+                // Clamp velocity
+                this.velocity.clampLength(0, 15);
+                
+                // Update position
+                this.position.add(this.velocity);
+                
+                // Boundary handling (wrap around)
+                const boundary = this.searchSpace / 2;
+                if (this.position.x > boundary) this.position.x = -boundary;
+                if (this.position.x < -boundary) this.position.x = boundary;
+                if (this.position.y > boundary) this.position.y = -boundary;
+                if (this.position.y < -boundary) this.position.y = boundary;
+                if (this.position.z > boundary) this.position.z = -boundary;
+                if (this.position.z < -boundary) this.position.z = boundary;
+                
+                // Update visual
+                this.mesh.position.copy(this.position);
+                
+                // Orient towards velocity
+                if (this.velocity.length() > 0.1) {
+                    this.mesh.lookAt(
+                        this.position.x + this.velocity.x,
+                        this.position.y + this.velocity.y,
+                        this.position.z + this.velocity.z
+                    );
+                }
+                
+                // Update trail
+                this.trailPoints.push(this.position.clone());
+                if (this.trailPoints.length > this.maxTrailLength) {
+                    this.trailPoints.shift();
+                }
+            }
+
+            destroy() {
+                scene.remove(this.mesh);
+            }
+        }
+
+        // PSO parameters
+        const psoParams = {
+            cognitive: 2.0,
+            social: 2.0,
+            inertia: 0.7,
+            flocking: 0.5,
+            particleCount: 80,
+            searchSpace: 150
+        };
+
+        // Global variables
+        let particles = [];
+        let globalBest = new THREE.Vector3();
+        let globalBestFitness = Infinity;
+        let iterations = 0;
+        let currentFunction = 'sphere';
+        
+        // Global best indicator
+        const globalBestGeometry = new THREE.SphereGeometry(3, 16, 16);
+        const globalBestMaterial = new THREE.MeshLambertMaterial({ 
+            color: 0xff4444,
+            emissive: 0x440000
+        });
+        const globalBestMesh = new THREE.Mesh(globalBestGeometry, globalBestMaterial);
+        scene.add(globalBestMesh);
+
+        // Initialize swarm
+        function initializeSwarm() {
+            particles.forEach(p => p.destroy());
+            particles = [];
+            
+            for (let i = 0; i < psoParams.particleCount; i++) {
+                particles.push(new Particle(psoParams.searchSpace));
+            }
+            
+            globalBest = new THREE.Vector3();
+            globalBestFitness = Infinity;
+            iterations = 0;
+        }
+
+        initializeSwarm();
+
+        // Mouse controls
+        document.addEventListener('mousedown', (e) => {
+            isMouseDown = true;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (isMouseDown) {
+                const deltaX = e.clientX - mouseX;
+                const deltaY = e.clientY - mouseY;
+                
+                targetX += deltaX * 0.01;
+                targetY += deltaY * 0.01;
+                
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            }
+        });
+
+        document.addEventListener('wheel', (e) => {
+            cameraDistance += e.deltaY * 0.3;
+            cameraDistance = Math.max(100, Math.min(1000, cameraDistance));
+        });
+
+        // Control panel functionality
+        const controls = {
+            cognitive: document.getElementById('cognitive'),
+            social: document.getElementById('social'),
+            inertia: document.getElementById('inertia'),
+            flocking: document.getElementById('flocking'),
+            particleCount: document.getElementById('particleCount'),
+            searchSpace: document.getElementById('searchSpace'),
+            functionSelect: document.getElementById('functionSelect')
+        };
+
+        const valueDisplays = {
+            cognitiveValue: document.getElementById('cognitiveValue'),
+            socialValue: document.getElementById('socialValue'),
+            inertiaValue: document.getElementById('inertiaValue'),
+            flockingValue: document.getElementById('flockingValue'),
+            particleCountValue: document.getElementById('particleCountValue'),
+            searchSpaceValue: document.getElementById('searchSpaceValue')
+        };
+
+        function updateControls() {
+            psoParams.cognitive = parseFloat(controls.cognitive.value);
+            psoParams.social = parseFloat(controls.social.value);
+            psoParams.inertia = parseFloat(controls.inertia.value);
+            psoParams.flocking = parseFloat(controls.flocking.value);
+            
+            const newParticleCount = parseInt(controls.particleCount.value);
+            const newSearchSpace = parseInt(controls.searchSpace.value);
+            
+            if (newParticleCount !== psoParams.particleCount || newSearchSpace !== psoParams.searchSpace) {
+                psoParams.particleCount = newParticleCount;
+                psoParams.searchSpace = newSearchSpace;
+                initializeSwarm();
+            }
+            
+            const newFunction = controls.functionSelect.value;
+            if (newFunction !== currentFunction) {
+                currentFunction = newFunction;
+                globalBest = new THREE.Vector3();
+                globalBestFitness = Infinity;
+                iterations = 0;
+            }
+
+            // Update displays
+            valueDisplays.cognitiveValue.textContent = psoParams.cognitive.toFixed(1);
+            valueDisplays.socialValue.textContent = psoParams.social.toFixed(1);
+            valueDisplays.inertiaValue.textContent = psoParams.inertia.toFixed(2);
+            valueDisplays.flockingValue.textContent = psoParams.flocking.toFixed(1);
+            valueDisplays.particleCountValue.textContent = psoParams.particleCount.toString();
+            valueDisplays.searchSpaceValue.textContent = psoParams.searchSpace.toString();
+        }
+
+        Object.values(controls).forEach(control => {
+            control.addEventListener('input', updateControls);
+            control.addEventListener('change', updateControls);
+        });
+
+        updateControls();
+
+        // Statistics update
+        function updateStats() {
+            document.getElementById('globalBest').textContent = globalBestFitness.toFixed(4);
+            document.getElementById('iterations').textContent = iterations.toString();
+            
+            const avgVel = particles.reduce((sum, p) => sum + p.velocity.length(), 0) / particles.length;
+            document.getElementById('avgVelocity').textContent = avgVel.toFixed(2);
+            
+            const convergence = particles.filter(p => p.position.distanceTo(globalBest) < 20).length / particles.length;
+            document.getElementById('convergence').textContent = (convergence * 100).toFixed(1) + '%';
+        }
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update camera
+            const cameraX = Math.cos(targetX) * Math.cos(targetY) * cameraDistance;
+            const cameraY = Math.sin(targetY) * cameraDistance;
+            const cameraZ = Math.sin(targetX) * Math.cos(targetY) * cameraDistance;
+            
+            camera.position.set(cameraX, cameraY, cameraZ);
+            camera.lookAt(0, 0, 0);
+
+            // Update particles
+            const currentOptFunc = optimizationFunctions[currentFunction];
+            
+            particles.forEach(particle => {
+                const fitness = particle.evaluateFitness(currentOptFunc);
+                
+                if (fitness < globalBestFitness) {
+                    globalBestFitness = fitness;
+                    globalBest.copy(particle.position);
+                }
+                
+                particle.update(globalBest, particles, psoParams);
+            });
+            
+            // Update global best indicator
+            globalBestMesh.position.copy(globalBest);
+            
+            // Pulse effect for global best
+            const pulseScale = 1 + 0.3 * Math.sin(Date.now() * 0.005);
+            globalBestMesh.scale.setScalar(pulseScale);
+            
+            iterations++;
+            
+            // Update stats every 10 frames
+            if (iterations % 10 === 0) {
+                updateStats();
+            }
+
+            // Rotate stars slowly
+            stars.rotation.y += 0.0002;
+
+            renderer.render(scene, camera);
+        }
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
